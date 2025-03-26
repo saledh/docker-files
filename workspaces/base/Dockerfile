@@ -1,31 +1,42 @@
 FROM ubuntu:24.04
 
-# Install Desktop Environment packages
-RUN apt update && apt upgrade -y && DEBIAN_FRONTEND="noninteractive" apt install -y --no-install-recommends \
-        dbus-x11 \
-        firefox \
-        git \
-        locales \
-        pavucontrol \
-        pulseaudio \
-        pulseaudio-utils \
-        sudo \
-        x11-xserver-utils \
-        xfce4 \
-        xfce4-goodies \
-        xfce4-pulseaudio-plugin \
-        xorgxrdp \
-        xrdp \
-        xubuntu-icon-theme \
-    && rm -rf /var/lib/apt/lists/*
+# System update and upgrade
+RUN apt update && apt upgrade -y
 
-# Neovim install
-RUN apt update && apt upgrade -y && apt install -y software-properties-common && add-apt-repository ppa:neovim-ppa/unstable -y && apt-get install -y neovim
-    
-### Neovim setup
-RUN apt-get install -y git curl make cmake gcc ripgrep fzf fd-find
-RUN git clone https://github.com/LazyVim/starter ~/.config/nvim
-RUN rm -rf ~/.config/nvim/.git
+# Create a user and add it to sudo group
+RUN useradd -m user && \
+    echo "user:password" | chpasswd && \
+    usermod -aG sudo user
 
-# Set "ubuntu" user's password
-RUN echo "ubuntu:password" | chpasswd
+# Install general-purpose packages
+RUN apt install -y \
+    git \
+    curl \
+    wget \
+    unzip \
+    xclip \
+    iproute2 \
+    stow \
+    gcc \
+    make \
+    cmake \
+    ripgrep \
+    fd-find \
+    fzf
+
+# Install zsh and set it as default shell (for "saledh" user)
+RUN apt install -y zsh && chsh -s /bin/zsh user
+
+# Install tmux
+RUN apt install -y tmux
+
+# Install alacritty and neovim (latest unstable)
+RUN apt install -y software-properties-common && \
+    add-apt-repository ppa:neovim-ppa/unstable -y && \
+    apt install -y neovim
+
+# Install JetBrains Nerd Font
+RUN curl https://raw.githubusercontent.com/saledh/shell-scripts/refs/heads/main/nerd-fonts/install-font.sh | sh
+
+# Download dotfiles
+RUN git clone https://github.com/saledh/dotfiles.git /home/user/dotfiles
